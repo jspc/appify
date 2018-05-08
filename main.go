@@ -17,37 +17,57 @@ import (
 )
 
 const (
-	E_ERROR = 2
+	E_ARGS = iota
+	E_ERROR
+)
+
+type infoListData struct {
+	Name               string
+	Executable         string
+	Identifier         string
+	Version            string
+	InfoString         string
+	ShortVersionString string
+	IconFile           string
+}
+
+var (
+	name       = flag.String("name", "My Go Application", "app name")
+	author     = flag.String("author", "Appify by Machine Box", "author")
+	version    = flag.String("version", "1.0", "app version")
+	identifier = flag.String("id", "", "bundle identifier")
+	icon       = flag.String("icon", "", "icon image file (.icns|.png|.jpg|.jpeg)")
+	distDir    = flag.String("dist", ".", "directory in which to build App")
 )
 
 func main() {
-	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err)
+	flag.Parse()
+
+	args := flag.Args()
+	if len(args) < 1 {
+		fmt.Fprint(os.Stderr, errors.New("missing executable argument"))
+
+		os.Exit(E_ARGS)
+	}
+
+	bin := args[0]
+
+	err := run(bin)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+
 		os.Exit(E_ERROR)
 	}
 }
 
-func run() error {
-	var (
-		name       = flag.String("name", "My Go Application", "app name")
-		author     = flag.String("author", "Appify by Machine Box", "author")
-		version    = flag.String("version", "1.0", "app version")
-		identifier = flag.String("id", "", "bundle identifier")
-		icon       = flag.String("icon", "", "icon image file (.icns|.png|.jpg|.jpeg)")
-	)
-	flag.Parse()
-	args := flag.Args()
+func run(bin string) error {
+	appName := fmt.Sprintf("%s.app", *name)
 
-	if len(args) < 1 {
-		return errors.New("missing executable argument")
-	}
-
-	bin := args[0]
-	appname := *name + ".app"
-	contentsPath := filepath.Join(appname, "Contents")
+	basePath := filepath.Join(*distDir, appName)
+	contentsPath := filepath.Join(basePath, "Contents")
 	appPath := filepath.Join(contentsPath, "MacOS")
 	resouresPath := filepath.Join(contentsPath, "Resources")
-	binPath := filepath.Join(appPath, appname)
+	binPath := filepath.Join(appPath, appName)
 
 	if err := os.MkdirAll(appPath, 0777); err != nil {
 		return errors.Wrap(err, "os.MkdirAll appPath")
@@ -89,7 +109,7 @@ func run() error {
 
 	info := infoListData{
 		Name:               *name,
-		Executable:         filepath.Join("MacOS", appname),
+		Executable:         filepath.Join("MacOS", appName),
 		Identifier:         id,
 		Version:            *version,
 		InfoString:         *name + " by " + *author,

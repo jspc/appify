@@ -16,10 +16,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	E_ERROR = 2
+)
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err)
-		os.Exit(2)
+		os.Exit(E_ERROR)
 	}
 }
 
